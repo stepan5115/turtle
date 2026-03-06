@@ -1,21 +1,25 @@
 # ============================================
 # Универсальный Makefile для проекта с ANTLR4 и OpenGL
-# Использование: make GRAMMAR=путь/к/грамматике.g4
+# Использование: make GRAMMAR_FILE=путь/к/грамматике.g4
 # ============================================
+
+ANTLR_PATH = $(shell if [ -d "/usr/local/include/antlr4-runtime" ]; then echo "-I/usr/local/include/antlr4-runtime"; elif [ -d "/usr/include/antlr4-runtime" ]; then echo "-I/usr/include/antlr4-runtime"; fi)
 
 # Конфигурация
 CXX = g++
-CXXFLAGS = -Wall -Wextra -std=c++14 -g -I.
-LDFLAGS = -lGL -lGLU -lglut
+CXXFLAGS = -Wall -Wextra -std=c++17 -g -I. -Igenerated $(ANTLR_PATH) \
+           -Wno-overloaded-virtual -Wno-unused-parameter
+LDFLAGS = -lGL -lGLU -lglut -lantlr4-runtime
 TARGET = turtle
 SOURCES = main.cpp render.cpp
 HEADERS = settings.h operations.h render.h
-GRAMMAR_FILE ?= grammar.g4  # Можно переопределить при вызове: make GRAMMAR=mygrammar.g4
+GRAMMAR_FILE = grammars/TurtleGrammar.g4
 ANTLR_JAR = antlr-4.13.2-complete.jar
-ANTLR_URL = https://www.antlr.org/download/$(ANTLR_JAR)
+ANTLR_URL = https://repo1.maven.org/maven2/org/antlr/antlr4/4.13.2/antlr4-4.13.2-complete.jar
 JRE_URL = https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.22%2B7/OpenJDK11U-jre_x64_linux_hotspot_11.0.22_7.tar.gz
 JRE_DIR = jre
 ANTLR_DIR = antlr
+GENERATED_DIR = generated
 
 # Цвета для вывода
 RED = \033[0;31m
@@ -67,6 +71,30 @@ check_antlr: check_jre
 			exit 1; \
 		fi; \
 	fi
+# Проверка наличия ANTLR runtime
+check_antlr_runtime:
+	@echo "$(BLUE)Проверка наличия ANTLR runtime...$(NC)"
+	@if pkg-config --exists libantlr4-runtime 2>/dev/null || pkg-config --exists antlr4-runtime 2>/dev/null; then \
+		echo "$(GREEN)  ANTLR runtime найден$(NC)"; \
+	else \
+		if [ -f "/usr/include/antlr4-runtime/antlr4-runtime.h" ] || [ -f "/usr/local/include/antlr4-runtime/antlr4-runtime.h" ]; then \
+			echo "$(GREEN)  ANTLR runtime найден (по наличию файлов)$(NC)"; \
+		else \
+			echo "$(YELLOW)  ANTLR runtime не найден. Попытка установки...$(NC)"; \
+			if command -v apt-get > /dev/null; then \
+				sudo apt-get update && sudo apt-get install -y libantlr4-runtime-dev; \
+			elif command -v yum > /dev/null; then \
+				sudo yum install -y antlr4-runtime-devel; \
+			elif command -v pacman > /dev/null; then \
+				sudo pacman -S --noconfirm antlr4-runtime; \
+			else \
+				echo "$(RED)  Не удалось установить ANTLR runtime. Менеджер пакетов не поддерживается.$(NC)"; \
+				echo "$(YELLOW)  Установите вручную: libantlr4-runtime-dev$(NC)"; \
+				exit 1; \
+			fi; \
+			echo "$(GREEN)  ANTLR runtime успешно установлен$(NC)"; \
+		fi; \
+	fi
 # Проверка наличия JRE
 check_jre:
 	@echo "$(BLUE)Проверка наличия JRE...$(NC)"
@@ -82,6 +110,7 @@ check_jre:
 		echo "$(YELLOW)  JRE не найден. Скачивание...$(NC)"; \
 		$(MAKE) download_jre; \
 	fi
+
 # Скачивание JRE
 download_jre:
 	@echo "$(BLUE)Скачивание JRE 11...$(NC)"
@@ -106,19 +135,17 @@ generate_parser: check_antlr
 	@echo "$(BLUE)Генерация парсера из $(GRAMMAR_FILE)...$(NC)"
 	@if [ ! -f "$(GRAMMAR_FILE)" ]; then \
 		echo "$(RED)  Файл грамматики $(GRAMMAR_FILE) не найден!$(NC)"; \
-		echo "$(YELLOW)  Укажите путь: make GRAMMAR=путь/к/файлу.g4$(NC)"; \
+		echo "$(YELLOW)  Укажите путь: make GRAMMAR_FILE=путь/к/файлу.g4$(NC)"; \
 		exit 1; \
 	fi
-	@if [ -d "$(JRE_DIR)" ]; then \
-		$(JRE_DIR)/bin/java -jar $(ANTLR_DIR)/$(ANTLR_JAR) -o generated -Dlanguage=Cpp -no-listener -visitor $(GRAMMAR_FILE); \
+	@mkdir -p $(GENERATED_DIR)
+	@if [ -d "$(JRE_DIR)" ] && [ -f "$(JRE_DIR)/bin/java" ]; then \
+		$(JRE_DIR)/bin/java -jar $(ANTLR_DIR)/$(ANTLR_JAR) -o $(GENERATED_DIR) -Dlanguage=Cpp -no-listener -visitor $(GRAMMAR_FILE); \
 	else \
-		java -jar $(ANTLR_DIR)/$(ANTLR_JAR) -o generated -Dlanguage=Cpp -no-listener -visitor $(GRAMMAR_FILE); \
+		java -jar $(ANTLR_DIR)/$(ANTLR_JAR) -o $(GENERATED_DIR) -Dlanguage=Cpp -no-listener -visitor -Xexact-output-dir $(GRAMMAR_FILE); \
 	fi
 	@if [ $$? -eq 0 ]; then \
-		echo "$(GREEN)  Парсер успешно сгенерирован в папке generated/$(NC)"; \
-		SOURCES += generated/*.cpp; \
-		HEADERS += generated/*.h; \
-		CXXFLAGS += -Igenerated; \
+		echo "$(GREEN)  Парсер успешно сгенерирован в папке $(GENERATED_DIR)/$(NC)"; \
 	else \
 		echo "$(RED)  Ошибка при генерации парсера$(NC)"; \
 		exit 1; \
@@ -128,12 +155,21 @@ generate_parser: check_antlr
 # Сборка проекта
 # ============================================
 # Проверка всех зависимостей
-check_all: check_opengl check_antlr
+check_all: check_opengl check_antlr check_antlr_runtime
+
+# Получаем список сгенерированных файлов
+GENERATED_SOURCES := $(wildcard $(GENERATED_DIR)/*.cpp)
+GENERATED_HEADERS := $(wildcard $(GENERATED_DIR)/*.h)
 
 # Сборка с проверкой зависимостей
-$(TARGET): check_all generate_parser $(SOURCES) $(HEADERS)
+$(TARGET): check_all generate_parser $(SOURCES) $(HEADERS) $(GENERATED_HEADERS)
 	@echo "$(BLUE)Компиляция проекта...$(NC)"
-	@$(CXX) $(CXXFLAGS) $(SOURCES) generated/*.cpp -o $(TARGET) $(LDFLAGS)
+	@if [ -n "$(GENERATED_SOURCES)" ]; then \
+		$(CXX) $(CXXFLAGS) $(SOURCES) $(GENERATED_SOURCES) -o $(TARGET) $(LDFLAGS); \
+	else \
+		echo "$(YELLOW)  Предупреждение: Нет сгенерированных файлов в $(GENERATED_DIR)/$(NC)"; \
+		$(CXX) $(CXXFLAGS) $(SOURCES) -o $(TARGET) $(LDFLAGS); \
+	fi
 	@echo "$(GREEN)Сборка завершена успешно!$(NC)"
 
 # Цель по умолчанию
@@ -144,11 +180,15 @@ all: $(TARGET)
 # ============================================
 clean:
 	@echo "$(BLUE)Очистка...$(NC)"
-	rm -rf $(TARGET) *.o *~ *.gch generated $(ANTLR_DIR) $(JRE_DIR)
+	rm -rf $(TARGET) *.o *~ *.gch $(GENERATED_DIR) $(ANTLR_DIR) $(JRE_DIR)
 	@echo "$(GREEN)Очистка завершена$(NC)"
 
 clean_deps:
 	@echo "$(BLUE)Удаление загруженных зависимостей...$(NC)"
+	@if pkg-config --exists libantlr4-runtime 2>/dev/null; then \
+		echo "$(YELLOW)  ANTLR runtime установлен через apt. Для удаления: sudo apt purge libantlr4-runtime-dev$(NC)"; \
+		echo "$(YELLOW)  Пропускаю автоматическое удаление для безопасности...$(NC)"; \
+	fi
 	rm -rf $(ANTLR_DIR) $(JRE_DIR)
 	@echo "$(GREEN)Зависимости удалены$(NC)"
 
@@ -178,6 +218,7 @@ info:
 	@echo "  Исходники: $(SOURCES)"
 	@echo "  Заголовки: $(HEADERS)"
 	@echo "  Грамматика: $(GRAMMAR_FILE)"
+	@echo "  Сгенерированные файлы: $(GENERATED_SOURCES)"
 	@if [ -d "$(JRE_DIR)" ]; then \
 		echo "  JRE: локальная ($$($(JRE_DIR)/bin/java -version 2>&1 | head -n 1))"; \
 	else \
@@ -205,11 +246,11 @@ help:
 	@echo "  help                   - показать эту справку"
 	@echo ""
 	@echo "$(BLUE)Параметры:$(NC)"
-	@echo "  GRAMMAR=файл.g4        - путь к файлу грамматики ANTLR (обязательно)"
+	@echo "  GRAMMAR_FILE=файл.g4   - путь к файлу грамматики ANTLR (обязательно)"
 	@echo ""
 	@echo "$(YELLOW)Примеры:$(NC)"
-	@echo "  make GRAMMAR=grammar/turtle.g4"
-	@echo "  make run GRAMMAR=mygrammar.g4"
+	@echo "  make GRAMMAR_FILE=grammars/TurtleGrammar.g4"
+	@echo "  make run GRAMMAR_FILE=grammars/TurtleGrammar.g4"
 	@echo "  make clean_deps"
 
 # ============================================

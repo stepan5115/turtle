@@ -1,5 +1,16 @@
-antlr
-*.out
-*.o
+# ANTLR
+.antlr/
+generated/
+antlr/
+jre/
+
+# Сборка
 turtle
+*.o
+*.gch
+*~
+
+# Результаты
+*.turtle_output
+
 test.txt

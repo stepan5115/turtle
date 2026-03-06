@@ -68,7 +68,7 @@ void Render::display() {
     glutSwapBuffers();
 }
 
-void Render::keyboard(unsigned char key, int x, int y) {
+void Render::keyboard(unsigned char key, int /*x*/, int /*y*/) {
     switch (key) {
         case 27: // ESC
             exit(0);
@@ -85,7 +85,7 @@ void Render::keyboard(unsigned char key, int x, int y) {
     }
 }
 
-void Render::timer(int value) {
+void Render::timer(int /*value*/) {
     if (currentStep < currentProgram->size()) {
         executeNextStep();
         glutTimerFunc(delayMs, timer, 0);

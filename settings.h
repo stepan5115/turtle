@@ -59,8 +59,8 @@ public:
         return yCoord;
     }
     void fillField(RGB color) {
-        for (int i = 0; i < height; i++)
-            for (int j = 0; j < width; j++)
+        for (unsigned  int i = 0; i < height; i++)
+            for (unsigned int j = 0; j < width; j++)
                 field[i][j] = color;
     }
     void setDrawMode(bool isDrawModOn) {
