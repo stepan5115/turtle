@@ -158,12 +158,13 @@ generate_parser: check_antlr
 check_all: check_opengl check_antlr check_antlr_runtime
 
 # Получаем список сгенерированных файлов
-GENERATED_SOURCES := $(wildcard $(GENERATED_DIR)/*.cpp)
-GENERATED_HEADERS := $(wildcard $(GENERATED_DIR)/*.h)
+GENERATED_SOURCES = $(wildcard $(GENERATED_DIR)/*.cpp)
+GENERATED_HEADERS = $(wildcard $(GENERATED_DIR)/*.h)
 
 # Сборка с проверкой зависимостей
-$(TARGET): check_all generate_parser $(SOURCES) $(HEADERS) $(GENERATED_HEADERS)
+$(TARGET): check_all generate_parser $(SOURCES) $(HEADERS)
 	@echo "$(BLUE)Компиляция проекта...$(NC)"
+	$(eval GENERATED_SOURCES := $(wildcard $(GENERATED_DIR)/*.cpp))
 	@if [ -n "$(GENERATED_SOURCES)" ]; then \
 		$(CXX) $(CXXFLAGS) $(SOURCES) $(GENERATED_SOURCES) -o $(TARGET) $(LDFLAGS); \
 	else \
