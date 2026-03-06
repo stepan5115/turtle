@@ -1,7 +1,11 @@
 grammar TurtleGrammar;
 
 program
-    : statement* EOF
+    : resize* statement* EOF
+    ;
+
+resize
+    : 'resize' expression ',' expression ';'?
     ;
 
 statement
@@ -13,6 +17,45 @@ statement
     | fillFieldCommand           #FillFieldStmt
     | setDrawModeCommand         #SetDrawModeStmt
     | orientationCommand         #OrientationStmt
+    | assignment                 #AssignmentStmt
+    | ifStatement                #IfStmt
+    | whileStatement             #WhileStmt
+    | forStatement               #ForStmt
+    | block                      #BlockStmt
+    ;
+
+assignment
+    : 'let' IDENTIFIER '=' expression ';'?
+    ;
+
+expression
+    : '(' expression ')'                         #ParenExpr
+    | NUMBER                                     #NumberExpr
+    | IDENTIFIER                                 #VariableExpr
+    | '-' expression                             #UnaryMinusExpr
+    | '!' expression                             #NotExpr
+    | expression op=('*'|'/') expression         #MulDivExpr
+    | expression op=('+'|'-') expression         #AddSubExpr
+    | expression op=('<'|'>'|'<='|'>=') expression #RelationalExpr
+    | expression op=('=='|'!=') expression       #EqualityExpr
+    | expression '&&' expression                            #AndExpr
+    | expression '||' expression                            #OrExpr
+    ;
+
+ifStatement
+    : 'if' '(' expression ')' statement ('else' statement)?
+    ;
+
+whileStatement
+    : 'while' '(' expression ')' statement
+    ;
+
+forStatement
+    : 'for' '(' assignment? ';' expression? ';' assignment? ')' statement
+    ;
+
+block
+    : '{' statement* '}'
     ;
 
 penUpCommand
@@ -24,19 +67,19 @@ penDownCommand
     ;
 
 moveCommand
-    : 'move' NUMBER ';'?
+    : 'move' expression ';'?
     ;
 
 moveToCommand
-    : 'move_to' NUMBER ',' NUMBER ';'?
+    : 'move_to' expression ',' expression ';'?
     ;
 
 setColorCommand
-    : 'color' NUMBER ',' NUMBER ',' NUMBER ';'?
+    : 'color' expression ',' expression ',' expression ';'?
     ;
 
 fillFieldCommand
-    : 'fill' NUMBER ',' NUMBER ',' NUMBER ';'?
+    : 'fill' expression ',' expression ',' expression ';'?
     ;
 
 setDrawModeCommand
@@ -63,10 +106,17 @@ NUMBER
     : [0-9]+
     ;
 
+IDENTIFIER
+    : [a-zA-Z_][a-zA-Z0-9_]*
+    ;
+
 WS
     : [ \t\r\n]+ -> skip
     ;
 
 COMMENT
     : '//' ~[\r\n]* -> skip
+    ;
+COMMENT_MULTI
+    : '/*' .*? '*/' -> skip
     ;

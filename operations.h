@@ -82,4 +82,16 @@ public:
     }
 };
 
+class ResizeOperation : public Operation {
+private:
+    int newWidth;
+    int newHeight;
+public:
+    ResizeOperation(int w, int h) : newWidth(w), newHeight(h) {}
+    
+    void execute(Settings& settings) override {
+        settings.resize(newWidth, newHeight);
+    }
+};
+
 #endif

@@ -6,6 +6,9 @@
 #include <stdexcept>
 #include<vector>
 
+const unsigned int DEFAULT_WIDTH = 10;
+const unsigned int DEFAULT_HEIGHT= 10;
+
 enum Orientation {
     TOP,
     BOTTOM,
@@ -43,6 +46,11 @@ public:
         this->height = height;
         initField();
     }
+    Settings() {
+        this->width = DEFAULT_WIDTH;
+        this->height = DEFAULT_HEIGHT;
+        initField();
+    }
     unsigned int getWidth() const {
         return width;
     }
@@ -57,6 +65,15 @@ public:
     }
     unsigned int getY() const {
         return yCoord;
+    }
+    Orientation getOrientation() const {
+        return orientation;
+    }
+    void resize(int newWidth, int newHeight) {
+        if (newWidth <= 0 || newHeight <= 0)
+            throw std::runtime_error("invalid size for field");
+        this->width = newHeight;
+        this->height = newHeight;
     }
     void fillField(RGB color) {
         for (unsigned  int i = 0; i < height; i++)
