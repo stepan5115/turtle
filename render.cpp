@@ -211,8 +211,8 @@ void Render::timer(int /*value*/) {
     if (currentStep < currentProgram->size()) {
         if (!pausedTimer)
             executeNextStep();
-        glutTimerFunc(delayMs, timer, 0);
     }
+    glutTimerFunc(delayMs, timer, 0);
 }
 
 void Render::executeNextStep() {
