@@ -1,0 +1,9 @@
+resize 10, 10
+let x = 5
+let y = 10
+
+if (x < y) {
+    move 3
+} else {
+    move 1
+}

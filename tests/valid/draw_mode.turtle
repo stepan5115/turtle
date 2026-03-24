@@ -1,0 +1,5 @@
+resize 20, 20
+draw_mode true
+move 5
+draw_mode false
+move 5

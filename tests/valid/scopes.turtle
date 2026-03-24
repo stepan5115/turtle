@@ -1,0 +1,9 @@
+resize 20, 20
+let x = 1
+
+{
+    let x = 5
+    move x
+}
+
+move x

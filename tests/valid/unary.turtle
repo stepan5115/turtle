@@ -1,0 +1,4 @@
+resize 10, 10
+let x = -5
+let y = 10 + -3
+move y

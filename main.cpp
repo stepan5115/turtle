@@ -190,6 +190,14 @@ public:
     }
     std::any visitMoveCommand(TurtleGrammarParser::MoveCommandContext* ctx) override {
         int distance = evalExpression(ctx->expression());
+
+        if (distance < 0) {
+            throw std::runtime_error(
+                "Некорректное значение движения: " + std::to_string(distance) +
+                " (должно быть >= 0)"
+            );
+        }
+        
         program.push_back(std::make_unique<MoveOperation>(distance));
         return {};
     }
@@ -202,11 +210,25 @@ public:
     }
     std::any visitSetColorCommand(TurtleGrammarParser::SetColorCommandContext* ctx) override {
         auto exprs = ctx->expression();
-        RGB color(
-            evalExpression(exprs[0]),
-            evalExpression(exprs[1]),
-            evalExpression(exprs[2])
-        );
+
+        int r = evalExpression(exprs[0]);
+        int g = evalExpression(exprs[1]);
+        int b = evalExpression(exprs[2]);
+
+        auto check = [](int value, const std::string& name) {
+            if (value < 0 || value > 255) {
+                throw std::runtime_error("Некорректное значение цвета " + name + ": " + std::to_string(value));
+            }
+        };
+
+        check(r, "R");
+        check(g, "G");
+        check(b, "B");
+
+        RGB color(static_cast<unsigned char>(r),
+              static_cast<unsigned char>(g),
+              static_cast<unsigned char>(b));
+
         program.push_back(std::make_unique<SetDrawColorOperation>(color));
         return {};
     }
@@ -248,98 +270,72 @@ public:
 
 int main(int argc, char** argv) {
     try {
-        if (argc != 2) {
-            std::cerr << "Использование: " << argv[0] << " <файл_с_программой>" << std::endl;
+        if ((argc < 2) || (argc > 3)) {
+            std::cerr << "Использование: " << argv[0] << " <файл_с_программой> [--testing]" << std::endl;
             return 1;
         }
-        std::string filename = argv[1];
+        bool testingMode = false;
+        std::string filename;
+        for (int i = 1; i < argc; i++) {
+            std::string arg = argv[i];
+            if (arg == "--testing") {
+                testingMode = true;
+            } else {
+                filename = arg;
+            }
+        }
+
+        if (filename.empty()) {
+            if (!testingMode) {
+                std::cerr << "Файл не указан\n";
+            }
+            return 1;
+        }
+
         std::ifstream file(filename);
         if (!file.is_open()) {
-            std::cerr << "Ошибка: не удалось открыть файл " << filename << std::endl;
+            if (!testingMode) {
+                std::cerr << "Ошибка: не удалось открыть файл " << filename << std::endl;
+            }
             return 1;
         }
         std::stringstream buffer;
         buffer << file.rdbuf();
         std::string input = buffer.str();
-        
-        std::cout << "Файл загружен: " << filename << std::endl;
-        std::cout << "Размер: " << input.length() << " байт" << std::endl;
 
         ANTLRInputStream inputStream(input);
         TurtleGrammarLexer lexer(&inputStream);
         CommonTokenStream tokens(&lexer);
-        tokens.fill();
-        std::cout << "\nНайдено токенов: " << tokens.size() << std::endl;
-        std::cout << "Токены:" << std::endl;
-        for (auto token : tokens.getTokens()) {
-            std::cout << "  " << token->toString() << std::endl;
-        }
         TurtleGrammarParser parser(&tokens);
-        parser.setErrorHandler(std::make_shared<DefaultErrorStrategy>());
-        std::cout << "\nРазбор программы..." << std::endl;
+
         tree::ParseTree* tree = parser.program();
         ErrorCountingVisitor errorVisitor;
         errorVisitor.visit(tree);
-        std::cout << "\nРезультат:" << std::endl;
-        std::cout << "  Ошибок: " << errorVisitor.getErrorCount() << std::endl;
+
+        parser.setErrorHandler(std::make_shared<DefaultErrorStrategy>());
         
-        if (errorVisitor.getErrorCount() == 0) {
-            std::cout << "  Программа синтаксически корректна! Выполняем..." << std::endl;
-            std::vector<std::unique_ptr<Operation>> program;
-            TurtleVisitor visitor(program);
-            visitor.visit(tree);
-            Settings settings(30, 30);
-            settings.fillField(RGB(0, 0, 0));
-            Render::run(settings, program, 300, 800, 600, argc, argv);
-        } else {
-            std::cout << "  Программа содержит ошибки." << std::endl;
-        }
-        /*
-        Settings settings(30, 30);
-        settings.fillField(RGB(0, 0, 0));
-        
-        std::vector<std::unique_ptr<Operation>> program;
-        
-        program.push_back(std::make_unique<FillFieldOperation>(RGB(0, 0, 0)));
-        // Рисуем спираль
-        int x = 15, y = 15;  // Центр
-        int step = 1;
-        int direction = 0;  // 0-вниз, 1-вправо, 2-вверх, 3-влево
-        program.push_back(std::make_unique<MoveToOperation>(x, y));
-        program.push_back(std::make_unique<SetDrawModeOperation>(true));
-        program.push_back(std::make_unique<SetDrawColorOperation>(RGB(255, 0, 0)));
-        for (int i = 0; i < 15; i++) {
-            for (int j = 0; j < 2; j++) {
-                // Меняем цвет
-                program.push_back(std::make_unique<SetDrawColorOperation>(
-                    RGB(rand() % 256, rand() % 256, rand() % 256)));
-                // Двигаемся в текущем направлении
-                switch (direction) {
-                    case 0: // вниз
-                        program.push_back(std::make_unique<SetOrientationOperation>(BOTTOM));
-                        program.push_back(std::make_unique<MoveOperation>(step));
-                        break;
-                    case 1: // вправо
-                        program.push_back(std::make_unique<SetOrientationOperation>(RIGHT));
-                        program.push_back(std::make_unique<MoveOperation>(step));
-                        break;
-                    case 2: // вверх
-                        program.push_back(std::make_unique<SetOrientationOperation>(TOP));
-                        program.push_back(std::make_unique<MoveOperation>(step));
-                        break;
-                    case 3: // влево
-                        program.push_back(std::make_unique<SetOrientationOperation>(LEFT));
-                        program.push_back(std::make_unique<MoveOperation>(step));
-                        break;
-                }
-                direction = (direction + 1) % 4;
+        if (errorVisitor.getErrorCount() != 0) {
+            if (!testingMode) {
+                std::cout << "Программа содержит ошибки синтаксические или лексические" << std::endl;
             }
-            step++;
+            return 1;
         }
 
-        program.push_back(std::make_unique<SetDrawModeOperation>(false));
+        std::vector<std::unique_ptr<Operation>> program;
+        TurtleVisitor visitor(program);
+        visitor.visit(tree);
+
+        Settings settings(30, 30);
+        settings.fillField(RGB(0, 0, 0));
+
+        if (testingMode) {
+            for (auto& op : program) {
+                op->execute(settings);
+            }
+            return 0;
+        }
+
         Render::run(settings, program, 300, 800, 600, argc, argv);
-        */
     } catch (const std::exception& e) {
         std::cerr << "Ошибка: " << e.what() << std::endl;
         return 1;

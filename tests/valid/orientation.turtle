@@ -1,0 +1,13 @@
+resize 20, 20
+
+right
+move 5
+
+up
+move 5
+
+left
+move 5
+
+down
+move 5

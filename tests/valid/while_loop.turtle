@@ -1,0 +1,8 @@
+resize 20, 20
+let i = 0
+
+while (i < 5) {
+    move 2
+    right
+    let i = i + 1
+}

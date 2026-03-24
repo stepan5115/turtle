@@ -1,0 +1,10 @@
+resize 20, 20
+pen_down
+color 255, 0, 0
+move 5
+right
+color 0, 255, 0
+move 5
+up
+color 0, 0, 255
+move 5

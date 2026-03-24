@@ -1,0 +1,50 @@
+// Рисуем спираль с помощью переменных
+resize 50, 50
+let size = 1
+let max_size = 10
+move_to 15, 15
+pen_down
+
+while (size < max_size) {
+    color 255, 0, 0
+    move size
+    right
+    color 0, 255, 0
+    move size
+    up
+    color 0, 0, 255
+    move size + 1
+    left
+    color 255, 255, 0
+    move size + 1
+    down
+    // ВАЖНО: каждое присваивание начинается с let!
+    let size = size + 2
+}
+pen_up
+
+// Квадрат с условием
+let x = 0
+let y = 10
+
+if (x < y) {
+    move_to x, y
+} else {
+    move_to y, x
+}
+
+let x = 20
+let y = 0
+
+if (x < y) {
+    move_to x, y
+} else {
+    move_to y, x
+}
+
+// Сложные выражения
+let a = 5
+let b = 10
+let c = (a + b) * 2 / 3
+right
+move c

@@ -1,0 +1,4 @@
+resize 10, 10
+while (1) {
+    move 1
+}

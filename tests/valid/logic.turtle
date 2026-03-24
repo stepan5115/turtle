@@ -1,0 +1,12 @@
+resize 10, 10
+
+let a = 5
+let b = 10
+
+if (a < b && b > 0) {
+    move 3
+}
+
+if (a == 5 || b == 0) {
+    move 2
+}
