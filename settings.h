@@ -72,8 +72,9 @@ public:
     void resize(int newWidth, int newHeight) {
         if (newWidth <= 0 || newHeight <= 0)
             throw std::runtime_error("invalid size for field");
-        this->width = newHeight;
+        this->width = newWidth;
         this->height = newHeight;
+        initField();
     }
     void fillField(RGB color) {
         for (unsigned  int i = 0; i < height; i++)
