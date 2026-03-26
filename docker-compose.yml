@@ -1,0 +1,12 @@
+version: "3.9"
+services:
+  turtle:
+    build: .
+    environment:
+      - DISPLAY=${DISPLAY}
+    volumes:
+      - ./:/app
+      - /tmp/.X11-unix:/tmp/.X11-unix
+    stdin_open: true
+    tty: true
+    

@@ -2,6 +2,9 @@
 
 EXEC=./turtle
 
+LD_LIB=/app/antlr4-runtime/lib
+export LD_LIBRARY_PATH=$LD_LIB
+
 GREEN="\033[0;32m"
 RED="\033[0;31m"
 YELLOW="\033[1;33m"
@@ -11,11 +14,14 @@ NC="\033[0m"
 PASS=0
 FAIL=0
 
+echo -e "${BLUE}=== PREPARING PROJECT ===${NC}"
+make all || { echo -e "${RED}Сборка не удалась${NC}"; exit 1; }
+
 run_test() {
     local file=$1
     local expected=$2
 
-    timeout 2s $EXEC "$file" --testing > /dev/null 2>&1
+    timeout 2s make run INPUT_FILE="$file" FLAGS=--testing > /dev/null 2>&1
     STATUS=$?
 
     RESULT=""

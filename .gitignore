@@ -1,5 +1,6 @@
 # ANTLR
 .antlr/
+antlr4-runtime/
 generated/
 antlr/
 jre/
