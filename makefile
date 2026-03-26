@@ -40,7 +40,7 @@ $(TARGET): $(SOURCES) $(GENERATED_FILES)
 	$(CXX) $(CXXFLAGS) $(SOURCES) $(GENERATED_DIR)/*.cpp -o $(TARGET) $(LDFLAGS)
 	@echo "Сборка завершена: $(TARGET)"
 
-all: $(TARGET)
+all: setup_deps $(TARGET)
 
 # ============================================
 # Очистка

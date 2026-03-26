@@ -7,7 +7,8 @@
 Для сборки исполняемого файла `turtle` используйте команду:
 
 ```bash
-make all
+если root: make all
+иначе: sudo make all
 ```
 
 Эта комнда так-же проверит и по-возможности подтянет отсутствующие зависимости (кроме openGL)
@@ -16,7 +17,8 @@ make all
 
 Синтаксис запуска:
 ```bash
-make run INPUT_FILE=<файл_с_программой> [FLAGS=--testing]
+если root: make run INPUT_FILE=<файл_с_программой> [FLAGS=--testing]
+иначе: sudo make run INPUT_FILE=<файл_с_программой> [FLAGS=--testing]
 ```
 
 Реализованно **ТОЛЬКО** через make run, так как библиотека antlr4-runtime лежит не в системных путях в силу особенностей реализации и при запуске исходника это надо указывать, так что обычный ./turtle не сработает.
@@ -27,15 +29,16 @@ make run INPUT_FILE=<файл_с_программой> [FLAGS=--testing]
 
 Пример:
 ```bash
-make run INPUT_FILE=tests/valid/spiral.turtle
-make run INPUT_FILE=tests/valid/spiral.turtle FLAGS=--testing
+если root: make run INPUT_FILE=tests/valid/spiral.turtle
+иначе: sudo make run INPUT_FILE=tests/valid/spiral.turtle FLAGS=--testing
 ```
 
 ## Автотесты
 
 Для запуска набора автотестов выполните:
 ```bash
-./testing.sh
+если root: ./testing.sh
+иначе: sudo ./testing.sh
 ```
 Скрипт выполняет сборку, проверяет корректность работы программы на валидных и невалидных тестах и выводит результаты в цвете.
 
@@ -48,6 +51,8 @@ make run INPUT_FILE=tests/valid/spiral.turtle FLAGS=--testing
 В проекте реализован так же dockerfile и docker-compose.yml. Визуализация результатов так же будет работать в вашей системе при запуске в докере.
 
 Особенно удобно если у вас нет желания скачивать openGL к себе на систему. Данная библиотека будет скачана в образе.
+
+Так же это очень удобно с той точки зрения, что в docker вы будете root, а значит не надо будет везде добавлять "sudo".
 
 
 Собирать образ следует данной командой:
