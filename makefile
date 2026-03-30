@@ -4,11 +4,14 @@
 # ============================================
 
 # Пути и версии
-ANTLR_JAR = antlr-4.13.2-complete.jar
-ANTLR_DIR = antlr
-JRE_DIR = jre
-ANTLR_RUNTIME_DIR = $(PWD)/antlr4-runtime
 ANTLR_VERSION = 4.13.2
+ANTLR_JAR = antlr4-$(ANTLR_VERSION)-complete.jar
+ANTLR_DIR = antlr
+ANTLR_URL = https://repo1.maven.org/maven2/org/antlr/antlr4/$(ANTLR_VERSION)/$(ANTLR_JAR)
+
+JRE_DIR = jre
+JAVA = $(JRE_DIR)/bin/java
+ANTLR_RUNTIME_DIR = $(PWD)/antlr4-runtime
 GENERATED_DIR = generated
 
 # Конфигурация компилятора
@@ -30,7 +33,8 @@ GRAMMAR_FILE ?= grammars/TurtleGrammar.g4
 $(GENERATED_FILES): $(GRAMMAR_FILE)
 	@echo "Генерация парсера из $<..."
 	@mkdir -p $(GENERATED_DIR)
-	@java -jar $(ANTLR_DIR)/$(ANTLR_JAR) -Dlanguage=Cpp -visitor -no-listener -o $(GENERATED_DIR) $< -Xexact-output-dir
+	@$(JAVA) -jar $(ANTLR_DIR)/$(ANTLR_JAR) -Dlanguage=Cpp -visitor -no-listener -o $(GENERATED_DIR) $< -Xexact-output-dir
+	@echo "Генерация завершена"
 
 # ============================================
 # Сборка исполняемого файла
@@ -46,9 +50,10 @@ all: setup_deps $(TARGET)
 # Очистка
 # ============================================
 clean:
-	@echo "Очистка..."
 	rm -rf $(TARGET) *.o *~ *.gch $(GENERATED_DIR)
-	@echo "Очистка завершена"
+
+clean-all: clean
+	rm -rf $(ANTLR_DIR) $(JRE_DIR) $(ANTLR_RUNTIME_DIR)
 
 # ============================================
 # Зависимости по желанию
@@ -58,20 +63,31 @@ setup_antlr_jar:
 	@if [ ! -f "$(ANTLR_DIR)/$(ANTLR_JAR)" ]; then \
 		echo "ANTLR jar не найден, скачиваем..."; \
 		mkdir -p $(ANTLR_DIR); \
-		wget -O $(ANTLR_DIR)/$(ANTLR_JAR) https://repo1.maven.org/maven2/org/antlr/antlr4/$(ANTLR_VERSION)/$(ANTLR_JAR) || \
-		curl -L -o $(ANTLR_DIR)/$(ANTLR_JAR) https://repo1.maven.org/maven2/org/antlr/antlr4/$(ANTLR_VERSION)/$(ANTLR_JAR); \
-		echo "ANTLR jar скачан в $(ANTLR_DIR)"; \
+		if command -v wget > /dev/null; then \
+			wget -O $(ANTLR_DIR)/$(ANTLR_JAR) $(ANTLR_URL); \
+		elif command -v curl > /dev/null; then \
+			curl -L -o $(ANTLR_DIR)/$(ANTLR_JAR) $(ANTLR_URL); \
+		else \
+			echo "Не найден wget или curl. Установите один из них."; \
+			exit 1; \
+		fi; \
+		if [ ! -s "$(ANTLR_DIR)/$(ANTLR_JAR)" ]; then \
+			echo "Ошибка: jar пустой или не скачался"; \
+			rm -f $(ANTLR_DIR)/$(ANTLR_JAR); \
+			exit 1; \
+		fi; \
+		echo "ANTLR jar готов"; \
 	else \
 		echo "ANTLR jar уже есть"; \
 	fi
 
 .PHONY: setup_jre
 setup_jre:
-	@if [ ! -x "$(JRE_DIR)/bin/java" ]; then \
+	@if [ ! -x "$(JAVA)" ]; then \
 		echo "JRE не найдена, скачиваем..."; \
 		mkdir -p $(JRE_DIR); \
-		wget -O $(JRE_DIR)/jre.tar.gz https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.22%2B7/OpenJDK11U-jre_x64_linux_hotspot_11.0.22_7.tar.gz || \
-		curl -L -o $(JRE_DIR)/jre.tar.gz https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.22%2B7/OpenJDK11U-jre_x64_linux_hotspot_11.0.22_7.tar.gz; \
+		wget -O $(JRE_DIR)/jre.tar.gz \
+		https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.22%2B7/OpenJDK11U-jre_x64_linux_hotspot_11.0.22_7.tar.gz || exit 1; \
 		tar -xzf $(JRE_DIR)/jre.tar.gz -C $(JRE_DIR) --strip-components=1; \
 		rm $(JRE_DIR)/jre.tar.gz; \
 		echo "JRE установлена"; \
