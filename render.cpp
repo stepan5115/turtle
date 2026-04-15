@@ -58,6 +58,7 @@ void Render::reset() {
 
 void Render::display() {
     glClear(GL_COLOR_BUFFER_BIT);
+    bool pen = currentSettings->getDrawMode();
     
     if (currentSettings) {
         const auto& field = currentSettings->getField();
@@ -96,7 +97,10 @@ void Render::display() {
         float turtleX = currentSettings->getX() * cellWidth;
         float turtleY = (height - currentSettings->getY() - 1) * cellHeight;
         
-        glColor3ub(255, 255, 0);
+        if(pen)
+            glColor3ub(255, 255, 0);
+        else
+            glColor3ub(0, 255, 0);
         glBegin(GL_QUADS);
         glVertex2f(turtleX, turtleY);
         glVertex2f(turtleX + cellWidth, turtleY);
@@ -175,8 +179,6 @@ void Render::display() {
         std::string helpText = "ESC:exit SPACE:step A:all P:pause";
         float helpWidth = helpText.length() * 8;
         drawText((windowWidth - helpWidth)/2, 10, helpText);
-
-        bool pen = currentSettings->getDrawMode();
 
         if (pen) {
             glColor3ub(0, 255, 0); // зелёный = рисует (опасный режим 😈)
