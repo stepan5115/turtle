@@ -66,6 +66,9 @@ public:
     unsigned int getY() const {
         return yCoord;
     }
+    bool getDrawMode() const {
+        return isDrawModOn;
+    }
     Orientation getOrientation() const {
         return orientation;
     }

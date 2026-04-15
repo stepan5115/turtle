@@ -175,6 +175,16 @@ void Render::display() {
         std::string helpText = "ESC:exit SPACE:step A:all P:pause";
         float helpWidth = helpText.length() * 8;
         drawText((windowWidth - helpWidth)/2, 10, helpText);
+
+        bool pen = currentSettings->getDrawMode();
+
+        if (pen) {
+            glColor3ub(0, 255, 0); // зелёный = рисует (опасный режим 😈)
+            drawText(windowWidth - 150, 60, "PEN: DOWN");
+        } else {
+            glColor3ub(255, 80, 80); // красный = не рисует (безобидный режим)
+            drawText(windowWidth - 150, 60, "PEN: UP");
+        }
     }
     
     glutSwapBuffers();

@@ -1,5 +1,6 @@
 resize 20, 20
-move_to 5, 5
 pen_down
+color 255, 0, 0
+move_to 19, 5
 move_to 10, 10
 move_to 0, 0
